@@ -1,100 +1,108 @@
 import sys
-import random
+from Util import *
 
-class Process:
-    def __init__(self,id,name,time,isCoordinator = False, isAlive = True):
-        self.id = id
-        self.name = name
-        self.time = time
-        self.isCoordinator = isCoordinator
-        self.isAlive = isAlive
+# List
+def list_all(processes_):
+    for p in processes_:
+        print(p.list_m())
 
-    # DEBUG purpose
-    def __str__(self):
-        return f"{{ name: {self.name}, id:{self.id}, time:{self.time}, isCoordinator:{self.isCoordinator}, isAlive:{self.isAlive}}}"
+# Clock
+def clock(processes_):
+    for p in processes_:
+        print(p.time_m())
 
-    def list_m(self):
-        if self.isCoordinator:
-            return f"{self.id}, {self.name}, (Coordinator)"
-        else:
-            return f"{self.id}, {self.name}"
+# Kill
+# Becomes buggy when bullying
+def kill(processes_,pid):
+    try:
+        p = list(filter(lambda x: x.id == pid, processes_))[0]
+    except:
+        print("Such element does not exist")
+        return processes_
 
-    def increment_name(self):
-        old_name = self.name.split("_")
-        old_name[1] = str((int(old_name[1])+1))
-        self.name = "_".join(old_name)
+    index = processes_.index(p)
 
-    def __repr__(self):
-        return self.__str__()
+    processes = processes_.copy()
+    processes[index].isAlive = False
 
-# Helper to handle arguments
-def handle_argv(argv, needed):
-    if len(argv) < needed:
-        print( "Not enough arguments supplied!")
-        exit(-1)
+    if p.isCoordinator:
+        processes = bully(processes)
 
-# Read input file and load the program
-def read_input(input_loc):
-    file = open(input_loc,"r")
-    processes = []
+    processes = [x for x in processes if x.id != pid]
+    return processes
+
+# Set Time
+def set_time(processes_, pid, time):
+    try:
+        p = list(filter(lambda x: x.id == pid, processes_))[0]
+    except:
+        print("Such element does not exist")
+        return
+
+
+    index = processes_.index(p)
+    processes = processes_.copy()
+    coord_time = p.minutes() + p.difference
+
+    # If coordinator, then send out the time difference to other processes
+    if p.isCoordinator:
+        p.time = time
+        for proc in processes:
+            if p.id != proc.id:
+                proc.difference = p.minutes() - proc.minutes()
+    else:
+        p.time = time
+        p.difference = coord_time - p.minutes()
+
+    processes[index] = p
+    return processes
+
+def reload(processes_,input_loc):
+    file = open(input_loc, "r")
     lines = file.readlines()
     file.close()
-
+    processes = processes_.copy()
     for line in lines:
         tokens = line.split(",")
         id = tokens[0].strip()
         name = tokens[1].strip()
         time = tokens[2].strip()
-        processes.append(Process(id,name,time))
+        if len(list(filter(lambda x: x.id == id, processes))) == 0:
+            processes.append(Process(id, name, time))
 
+    processes = bully(processes)
     return processes
-
-# List
-def list_all(processes):
-    for p in processes:
-        print(p.list_m())
-
-def bully(processes, isFirst):
-    message_counter = 0
-    current_process = random.randint(0,len(processes)-1)
-    # Random process, that initiates bullying
-    current_process = processes[current_process]
-    # An array of processes with higher IDs
-    # We send all the messages to every element in "next" array.
-    higher_ids = list(filter(lambda x: current_process.id < x.id, processes))
-    message_counter+=len(higher_ids)
-
-    while len(higher_ids) != 0:
-        # After that we receive the response only from those, that are alive.
-        higher_ids = list(filter(lambda x: x.isAlive, higher_ids))
-        message_counter += len(higher_ids)
-        # We find the smallest element from the list with ALIVE and HIGHER ID elements
-        # This will be the element with the next id
-        current_process = min(higher_ids,key=lambda x: x.id)
-        # We again, send the messages to all the processes with higher IDs
-        higher_ids = list(filter(lambda x: current_process.id < x.id, processes))
-        message_counter += len(higher_ids)
-
-    # At the end, send messages to all alive servers
-    # New coordinator is elected
-    for p in processes:
-        if p.id == current_process.id:
-            p.isCoordinator = True
-        else:
-            p.isCoordinator = False
-        # Self-explanatory
-        if not isFirst: p.increment_name()
-
-    # TODO: Clock synchronization logic
-    print(f"Process with id {current_process.id} is now the new coordinator")
-    print("Total number of messages required to find coordinator:",message_counter+len(processes)-1)
-    return processes
-
 
 
 if __name__ == "__main__":
     # Entrypoint
     handle_argv(sys.argv,2)
-    processes = read_input(sys.argv[1])
+    processes = bully(read_input(sys.argv[1]))
+    choice = ""
 
-    processes = bully(processes,True)
+    while choice!="exit":
+
+        choice = input("\nPlease, enter your next action:\n").strip()
+        # try:
+        args = choice.split(" ")
+
+        if args[0] == "exit":
+            print("\nCiao")
+        elif args[0] == "kill":
+            if handle_argv(args,2):
+                processes = kill(processes,args[1])
+        elif args[0] == "list":
+            list_all(processes)
+        elif args[0] == "clock":
+            clock(processes)
+        elif args[0] == "set-time":
+            if handle_argv(args,3):
+                processes = set_time(processes,args[1],args[2])
+        elif args[0] == "reload":
+            processes = reload(processes,sys.argv[1])
+        elif args[0] == "debug":
+            print(processes)
+
+
+        # except:
+        #     print("Please try again")
