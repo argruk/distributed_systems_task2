@@ -69,8 +69,12 @@ def bully(processes):
             p.difference = 0
         else:
             p.isCoordinator = False
-            # Coordinator sends the difference
-            p.difference = current_process.minutes() - p.minutes()
+            if not p.isFrozen:
+                # Coordinator sends the difference
+                p.difference = current_process.minutes() - p.minutes()
+                # keeping those in sync too
+                p.ticked_minutes = current_process.ticked_minutes
+
         # Self-explanatory
         # Shouldn't increase for frozen ones I guess?
         if not p.isFirst and not p.isFrozen:

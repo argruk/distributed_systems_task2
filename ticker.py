@@ -17,6 +17,9 @@ class Ticker:
         if self.thread is not None:
             self.thread.join()
 
+    def upd_list(self, new_processes):
+        self.processes = new_processes
+
     # approx clock
     def __tick(self):
         t = 0

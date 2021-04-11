@@ -33,6 +33,8 @@ def kill(processes_, pid):
 
     processes = processes_.copy()
     processes[index].isAlive = False
+    # kill the ticking clock
+    processes[index].ticket_minutes = 0
 
     # first remove from the list
     processes = [x for x in processes if x.id != pid]
@@ -134,6 +136,7 @@ if __name__ == "__main__":
                 freeze(processes, args[1])
         elif args[0] == "reload":
             processes = reload(processes, sys.argv[1])
+            ticker.upd_list(processes)
         elif args[0] == "debug":
             print(processes)
         else:
