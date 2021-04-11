@@ -46,6 +46,9 @@ def kill(processes_, pid):
 
 
 # Set Time
+# TODO (from desc):
+# if the time of any other process is changed, then that process should be synchronized again based on the
+# time of the coordinator (automatically after some time).
 def set_time(processes_, pid, time):
     try:
         p = list(filter(lambda x: x.id == pid and not x.isFrozen, processes_))[0]
@@ -86,6 +89,36 @@ def freeze(processes_, id):
 
     if p.isCoordinator:
         util.bully(processes_)
+
+
+def unfreeze(processes_, id):
+    try:
+        p = list(filter(lambda x: x.id == id, processes_))[0]
+    except:
+        print("Such element does not exist")
+
+    index = processes_.index(p)
+
+    if not processes_[index].isFrozen:
+        print("This process is not frozen")
+        return processes_
+
+    processes = processes_.copy()
+
+    processes[index].isFrozen = False
+    # From desc:
+    # Once it becomes the
+    # coordinator, it uses its default clock as the new time (the time from the process_file).
+    processes[index].ticket_minutes = 0
+    current_coordinator = list(filter(lambda x: x.isCoordinator, processes))[0]
+
+    if id > current_coordinator.id:
+        util.bully(processes, entry_idx=index)
+    else:
+        processes[index].ticked_minutes = current_coordinator.ticket_minutes
+        processes[index].difference = current_coordinator.minutes() - processes[index].minutes()
+
+    return processes
 
 
 def reload(processes_, input_loc):
@@ -134,6 +167,9 @@ if __name__ == "__main__":
         elif args[0] == "freeze":
             if util.handle_argv(args, 2):
                 freeze(processes, args[1])
+        elif args[0] == "unfreeze":
+            if util.handle_argv(args, 2):
+                processes = unfreeze(processes, args[1])
         elif args[0] == "reload":
             processes = reload(processes, sys.argv[1])
             ticker.upd_list(processes)
@@ -145,4 +181,3 @@ if __name__ == "__main__":
         # except:
         #     print("Please try again")
     ticker.stop()
-

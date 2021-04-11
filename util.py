@@ -31,13 +31,19 @@ def can_kill_or_freeze(processes):
     return len(list(filter(lambda x: x.isAlive and not x.isFrozen, processes))) > 1
 
 
-def bully(processes):
+def bully(processes, entry_idx=None):
     message_counter = 0
+    # for unfreeze
+    # From desc:
+    # If the suspended process has the higher id in the
+    # group, then the process should start bullying others until becoming the coordinator.
+    current_process = entry_idx
 
-    current_process = random.randint(0, len(processes) - 1)
-    # Simulating the behaviour where process initiates bullying. The starting process cannot be dead or frozen
-    while not processes[current_process].isAlive or processes[current_process].isFrozen:
+    if current_process is None:
         current_process = random.randint(0, len(processes) - 1)
+        # Simulating the behaviour where process initiates bullying. The starting process cannot be dead or frozen
+        while not processes[current_process].isAlive or processes[current_process].isFrozen:
+            current_process = random.randint(0, len(processes) - 1)
 
     # Random process, that initiates bullying
     current_process = processes[current_process]
