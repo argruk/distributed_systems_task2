@@ -1,19 +1,28 @@
 import sys
-from Util import *
+import util
+from process import Process
+from ticker import Ticker
+
 
 # List
 def list_all(processes_):
     for p in processes_:
         print(p.list_m())
 
+
 # Clock
 def clock(processes_):
     for p in processes_:
         print(p.time_m())
 
+
 # Kill
 # Becomes buggy when bullying
-def kill(processes_,pid):
+def kill(processes_, pid):
+    if not util.can_kill_or_freeze(processes_):
+        print("Can't kill the last process")
+        return processes_
+
     try:
         p = list(filter(lambda x: x.id == pid, processes_))[0]
     except:
@@ -25,20 +34,22 @@ def kill(processes_,pid):
     processes = processes_.copy()
     processes[index].isAlive = False
 
-    if p.isCoordinator:
-        processes = bully(processes)
-
+    # first remove from the list
     processes = [x for x in processes if x.id != pid]
+    # then select new coordinator
+    if p.isCoordinator:
+        processes = util.bully(processes)
+
     return processes
+
 
 # Set Time
 def set_time(processes_, pid, time):
     try:
-        p = list(filter(lambda x: x.id == pid, processes_))[0]
+        p = list(filter(lambda x: x.id == pid and not x.isFrozen, processes_))[0]
     except:
         print("Such element does not exist")
         return
-
 
     index = processes_.index(p)
     processes = processes_.copy()
@@ -57,7 +68,25 @@ def set_time(processes_, pid, time):
     processes[index] = p
     return processes
 
-def reload(processes_,input_loc):
+
+def freeze(processes_, id):
+    if not util.can_kill_or_freeze(processes_):
+        print("Can't freeze the last process")
+        return
+    try:
+        p = list(filter(lambda x: x.id == id, processes_))[0]
+    except:
+        print("Such element does not exist")
+
+    index = processes_.index(p)
+
+    processes_[index].isFrozen = True
+
+    if p.isCoordinator:
+        util.bully(processes_)
+
+
+def reload(processes_, input_loc):
     file = open(input_loc, "r")
     lines = file.readlines()
     file.close()
@@ -70,17 +99,19 @@ def reload(processes_,input_loc):
         if len(list(filter(lambda x: x.id == id, processes))) == 0:
             processes.append(Process(id, name, time))
 
-    processes = bully(processes)
+    processes = util.bully(processes)
     return processes
 
 
 if __name__ == "__main__":
     # Entrypoint
-    handle_argv(sys.argv,2)
-    processes = bully(read_input(sys.argv[1]))
+    util.handle_argv(sys.argv, 2)
+    processes = util.bully(util.read_input(sys.argv[1]))
     choice = ""
+    ticker = Ticker(processes)
+    ticker.start()
 
-    while choice!="exit":
+    while choice != "exit":
 
         choice = input("\nPlease, enter your next action:\n").strip()
         # try:
@@ -89,20 +120,26 @@ if __name__ == "__main__":
         if args[0] == "exit":
             print("\nCiao")
         elif args[0] == "kill":
-            if handle_argv(args,2):
-                processes = kill(processes,args[1])
+            if util.handle_argv(args, 2):
+                processes = kill(processes, args[1])
         elif args[0] == "list":
             list_all(processes)
         elif args[0] == "clock":
             clock(processes)
         elif args[0] == "set-time":
-            if handle_argv(args,3):
-                processes = set_time(processes,args[1],args[2])
+            if util.handle_argv(args, 3):
+                processes = set_time(processes, args[1], args[2])
+        elif args[0] == "freeze":
+            if util.handle_argv(args, 2):
+                freeze(processes, args[1])
         elif args[0] == "reload":
-            processes = reload(processes,sys.argv[1])
+            processes = reload(processes, sys.argv[1])
         elif args[0] == "debug":
             print(processes)
-
+        else:
+            print('Unsupported command')
 
         # except:
         #     print("Please try again")
+    ticker.stop()
+
