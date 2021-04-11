@@ -46,9 +46,8 @@ def kill(processes_, pid):
 
 
 # Set Time
-# TODO (from desc):
 # if the time of any other process is changed, then that process should be synchronized again based on the
-# time of the coordinator (automatically after some time).
+# time of the coordinator.
 def set_time(processes_, pid, time):
     try:
         p = list(filter(lambda x: x.id == pid and not x.isFrozen, processes_))[0]
@@ -78,10 +77,8 @@ def freeze(processes_, id):
     if not util.can_kill_or_freeze(processes_):
         print("Can't freeze the last process")
         return
-    try:
-        p = list(filter(lambda x: x.id == id, processes_))[0]
-    except:
-        print("Such element does not exist")
+
+    p = list(filter(lambda x: x.id == id, processes_))[0]
 
     index = processes_.index(p)
 
@@ -115,7 +112,7 @@ def unfreeze(processes_, id):
     if id > current_coordinator.id:
         util.bully(processes, entry_idx=index)
     else:
-        processes[index].ticked_minutes = current_coordinator.ticket_minutes
+        processes[index].ticked_minutes = current_coordinator.ticked_minutes
         processes[index].difference = current_coordinator.minutes() - processes[index].minutes()
 
     return processes
@@ -147,37 +144,38 @@ if __name__ == "__main__":
     ticker.start()
 
     while choice != "exit":
+        try:
+            choice = input("\nPlease, enter your next action:\n").strip()
+            args = choice.split(" ")
 
-        choice = input("\nPlease, enter your next action:\n").strip()
-        # try:
-        args = choice.split(" ")
+            if args[0] == "exit":
+                print("\nCiao")
+            elif args[0] == "kill":
+                if util.handle_argv(args, 2):
+                    processes = kill(processes, args[1])
+            elif args[0] == "list":
+                list_all(processes)
+            elif args[0] == "clock":
+                clock(processes)
+            elif args[0] == "set-time":
+                if util.handle_argv(args, 3):
+                    processes = set_time(processes, args[1], args[2])
+            elif args[0] == "freeze":
+                if util.handle_argv(args, 2):
+                    freeze(processes, args[1])
+            elif args[0] == "unfreeze":
+                if util.handle_argv(args, 2):
+                    processes = unfreeze(processes, args[1])
+            elif args[0] == "reload":
+                processes = reload(processes, sys.argv[1])
+                ticker.upd_list(processes)
+            elif args[0] == "debug":
+                print(processes)
+            else:
+                print('Unsupported command')
 
-        if args[0] == "exit":
-            print("\nCiao")
-        elif args[0] == "kill":
-            if util.handle_argv(args, 2):
-                processes = kill(processes, args[1])
-        elif args[0] == "list":
-            list_all(processes)
-        elif args[0] == "clock":
-            clock(processes)
-        elif args[0] == "set-time":
-            if util.handle_argv(args, 3):
-                processes = set_time(processes, args[1], args[2])
-        elif args[0] == "freeze":
-            if util.handle_argv(args, 2):
-                freeze(processes, args[1])
-        elif args[0] == "unfreeze":
-            if util.handle_argv(args, 2):
-                processes = unfreeze(processes, args[1])
-        elif args[0] == "reload":
-            processes = reload(processes, sys.argv[1])
-            ticker.upd_list(processes)
-        elif args[0] == "debug":
-            print(processes)
-        else:
-            print('Unsupported command')
-
-        # except:
-        #     print("Please try again")
+        except KeyboardInterrupt:
+            print("Please, do not use Ctrl+C. Try again with \'exit\' command")
+        except:
+            print("Please try again")
     ticker.stop()
