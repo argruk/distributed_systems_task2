@@ -1,4 +1,4 @@
-# Will add proper README later
+# Process manager with Bullying and Berkeley algorithms
 
 
 `python3 clock-by-bully.py input.txt` - use this command to start the application.
