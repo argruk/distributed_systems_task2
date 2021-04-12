@@ -1,7 +1,7 @@
 # Process manager with Bullying and Berkeley algorithms
 
 
-`python3 clock-by-bully.py input.txt` - use this command to start the application.
+`python3 clock-sync-by-bully.py input.txt` - use this command to start the application.
 
 **NB!** Clocks go up by one minute every 5 seconds.
 
