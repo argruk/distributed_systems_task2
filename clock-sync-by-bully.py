@@ -63,6 +63,7 @@ def set_time(processes_, pid, time):
     if p.isCoordinator:
         p.time = time
         for proc in processes:
+            proc.ticked_minutes = 0
             if p.id != proc.id:
                 proc.difference = p.minutes() - proc.minutes()
     else:
