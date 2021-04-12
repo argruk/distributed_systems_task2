@@ -3,6 +3,8 @@
 
 `python3 clock-by-bully.py input.txt` - use this command to start the application.
 
+**NB!** Clocks go up by one minute every 5 seconds.
+
 ### How to move around:
 
 Once you have started an application, you will be asked for commands. 
